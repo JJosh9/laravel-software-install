@@ -1,27 +1,112 @@
-# Laravel Software Install Templates
+# Laravel Software Install Script Template/Process
 
-[![Build Status](https://travis-ci.org/laravel/framework.svg)](https://travis-ci.org/laravel/framework)
-[![Total Downloads](https://poser.pugx.org/laravel/framework/d/total.svg)](https://packagist.org/packages/laravel/framework)
-[![Latest Stable Version](https://poser.pugx.org/laravel/framework/v/stable.svg)](https://packagist.org/packages/laravel/framework)
-[![Latest Unstable Version](https://poser.pugx.org/laravel/framework/v/unstable.svg)](https://packagist.org/packages/laravel/framework)
-[![License](https://poser.pugx.org/laravel/framework/license.svg)](https://packagist.org/packages/laravel/framework)
+Many developers find it kinda confusing at first on how to go about creating install scripts for clients or users of open source projects. This is a simple template/step-by-step process to help you accomplish that. You can fork, contribute to it or just copy the template/process into your app and improve on it based on your specific need.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable, creative experience to be truly fulfilling. Laravel attempts to take the pain out of development by easing common tasks used in the majority of web projects, such as authentication, routing, sessions, queueing, and caching.
+It has to do with creating a custom artisan command. If you are not sure how to go about that, please check this comprehensive [blog post](http://goodheads.io/2015/12/18/how-to-create-a-custom-artisan-command-in-laravel-5/)
 
-Laravel is accessible, yet powerful, providing tools needed for large, robust applications. A superb inversion of control container, expressive migration system, and tightly integrated unit testing support give you the tools you need to build any application with which you are tasked.
+## Stey by Step Process
 
-## Official Documentation
+1. Open your Terminal and Run the command:
 
-Documentation for the framework can be found on the [Laravel website](http://laravel.com/docs).
+```bash
+    php artisan make:console Install
+```
 
-## Contributing
+This creates a file called `Install.php` in the `app/Console/Commands` directory.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](http://laravel.com/docs/contributions).
+2. Open the file `Install.php` and dump this:
 
-## Security Vulnerabilities
+```php
+<?php
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell at taylor@laravel.com. All security vulnerabilities will be promptly addressed.
+namespace App\Console\Commands;
 
-## License
+use DB;
+use Exception;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Artisan;
 
-The Laravel framework is open-sourced software licensed under the [MIT license](http://opensource.org/licenses/MIT).
+class Install extends Command
+{
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'software:install';
+
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Install this software without issues, Thanks!';
+
+    /**
+     * Create a new command instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
+    /**
+     * Execute the console command.
+     *
+     * @return mixed
+     */
+    public function handle()
+    {
+
+        try {
+            DB::connection();
+        } catch (Exception $e) {
+            $this->error('Unable to connect to database.');
+            $this->error('Please fill valid database credentials into .env and rerun this command.');
+            return;
+        }
+
+        $this->comment('Attempting to install Software - 1.0.0');
+
+        if (! env('APP_KEY')) {
+            $this->info('Generating app key');
+            Artisan::call('key:generate');
+        } else {
+            $this->comment('App key exists -- skipping...');
+        }
+
+        $this->info('Migrating database...');
+
+        Artisan::call('migrate', ['--force' => true]);
+
+        $this->comment('Database Migrated Successfully...');
+
+        $this->info('Seeding DB data...');
+
+        Artisan::call('db:seed', ['--force' => true]);
+
+        $this->comment('Database Seeded Successfully...');
+        $this->comment('Successfully Installed! You can now run the software');
+    }
+}
+```
+
+By adding this, a user can now run `php artisan software:install` from the terminal.
+
+The code goes from:
+
+- ensuring the user has a database on standby with valid database credentials
+- to generating app key
+- to Migrating the database scripts ( migration files)
+- to seeding the database with data ( ensure you have the seeder classes all set up, an example is in this repo)
+
+This process captures the basic install process every user usually goes through in just one script, you can definitely add/improve on it.
+
+## Example User Install Instruction to be given by Developer
+
+- Clone the repo e.g git clone https://github.com/unicodeveloper/laravel-software-install
+- Run Composer Install
+- Fill the right database credentials in the .env file
+- Run `php artisan software:install`
